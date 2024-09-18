@@ -1,15 +1,20 @@
-version: "3"
-
 services:
   chirpd:
     build: .
     container_name: chirpd
-    ports:
-      - "25:25"
     volumes:
       - ./data:/etc/opendkim/keys
+      - ./data/KeyTable:/etc/opendkim/KeyTable:ro
+      - ./data/SigningTable:/etc/opendkim/SigningTable:ro
+      - ./data/TrustedHosts:/etc/opendkim/TrustedHosts:ro
+      - ./users:/etc/dovecot/users:ro
     env_file:
       - .env
+    environment:
+      - DOMAIN=${DOMAIN}
+      - MAIL_HOST=${MAIL_HOST}
+    ports:
+      - "127.0.0.1:25:25" # Bind to localhost:25
     restart: unless-stopped
     networks:
       - chirpd_net
