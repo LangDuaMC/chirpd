@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  chirpd:
+    build: .
+    container_name: chirpd
+    ports:
+      - "25:25"
+    volumes:
+      - ./data:/etc/opendkim/keys
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - chirpd_net
+
+networks:
+  chirpd_net:
+    driver: bridge

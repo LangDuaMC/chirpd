@@ -1,0 +1,20 @@
+#!/bin/bash
+DATA_DIR=./data
+
+if [ ! -d "$DATA_DIR" ]; then
+    mkdir $DATA_DIR
+fi
+
+if [ ! -f "$DATA_DIR/dkim.key" ]; then
+    # Load DOMAIN from .env file
+    source ./.env
+
+    # Generate DKIM keys
+    opendkim-genkey -s mail -d "$DOMAIN" -D "$DATA_DIR"
+
+    # Create DNS TXT record file
+    DNS_RECORD=$(cat "$DATA_DIR/mail.txt" | grep -o 'p=.*"' | sed 's/"$//')
+    echo "mail._domainkey.$DOMAIN IN TXT \"v=DKIM1; k=rsa; $DNS_RECORD\"" > "$DATA_DIR/dkim_dns_record.txt"
+
+    echo "DKIM keys generated and DNS record created in $DATA_DIR/dkim_dns_record.txt"
+fi
