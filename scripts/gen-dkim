@@ -9,24 +9,10 @@ fi
 source ./.env
 
 # Generate DKIM keys
-opendkim-genkey -s mail -d "$DOMAIN" -D "$DATA_DIR"
+rspamadm dkim_keygen -s mail -b 2048 -d "$DOMAIN" -k "$DATA_DIR/$DOMAIN.mail.key" > "$DATA_DIR/$DOMAIN.mail.txt"
 
 # Create DNS TXT record file
-DNS_RECORD=$(cat "$DATA_DIR/mail.txt" | grep -o 'p=.*"' | sed 's/"$//')
+DNS_RECORD=$(cat "$DATA_DIR/$DOMAIN.mail.txt" | grep -v DKIM | tr -d '\n' | sed 's/^[^"]*"//' | sed 's/"$//')
 echo "mail._domainkey.$DOMAIN IN TXT \"v=DKIM1; k=rsa; $DNS_RECORD\"" > "$DATA_DIR/dkim_dns_record.txt"
-
-# Populate KeyTable
-echo "mail._domainkey.$DOMAIN $DOMAIN:mail:$DATA_DIR/mail.private" > "$DATA_DIR/KeyTable"
-
-# Populate SigningTable
-echo "*@$DOMAIN mail._domainkey.$DOMAIN" > "$DATA_DIR/SigningTable"
-
-# Populate TrustedHosts
-{
-    echo "127.0.0.1"
-    echo "localhost"
-    echo "$DOMAIN"
-    [ -n "$MAIL_HOST" ] && echo "$MAIL_HOST"
-} > "$DATA_DIR/TrustedHosts"
 
 echo "DKIM keys generated and configuration files created in $DATA_DIR"

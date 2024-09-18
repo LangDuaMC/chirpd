@@ -3,10 +3,7 @@ services:
     build: .
     container_name: chirpd
     volumes:
-      - ./data:/etc/opendkim/keys
-      - ./data/KeyTable:/etc/opendkim/KeyTable:ro
-      - ./data/SigningTable:/etc/opendkim/SigningTable:ro
-      - ./data/TrustedHosts:/etc/opendkim/TrustedHosts:ro
+      - ./data:/etc/rspamd/dkim:ro
       - ./users:/etc/dovecot/users:ro
     env_file:
       - .env
