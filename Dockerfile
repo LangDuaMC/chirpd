@@ -33,7 +33,7 @@ RUN chown root:root /etc/dovecot/dovecot.conf && \
 
 # Create a startup script
 RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'rspamd -u rspamd -g rspamd &' >> /start.sh && \
+    echo 'rspamd --insecure &' >> /start.sh && \
     echo 'dovecot' >> /start.sh && \
     echo 'postconf -e "myhostname = $MAIL_HOST"' >> /start.sh && \
     echo 'postconf -e "myorigin = $DOMAIN"' >> /start.sh && \
