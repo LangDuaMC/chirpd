@@ -3,10 +3,6 @@ FROM alpine:latest
 # Install Postfix, OpenDKIM, and their dependencies, and Dovecot for SASL
 RUN apk add --no-cache postfix opendkim opendkim-utils dovecot curl rspamd
 
-# Create a non-root user for RSPAMD
-RUN adduser -D -H -s /sbin/nologin rspamd && \
-    addgroup rspamd rspamd
-
 # Configure Postfix for send-only, integrate with RSPAMD, enable SASL, and enable STARTTLS
 RUN postconf -e 'inet_interfaces = all' && \
     postconf -e 'mydestination = localhost.localdomain, localhost' && \
@@ -37,7 +33,7 @@ RUN chown root:root /etc/dovecot/dovecot.conf && \
 
 # Create a startup script
 RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'rspamd -u rspamd -g rspamd' >> /start.sh && \
+    echo 'rspamd -u rspamd -g rspamd &' >> /start.sh && \
     echo 'dovecot' >> /start.sh && \
     echo 'postconf -e "myhostname = $MAIL_HOST"' >> /start.sh && \
     echo 'postconf -e "myorigin = $DOMAIN"' >> /start.sh && \
