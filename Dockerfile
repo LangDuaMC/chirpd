@@ -3,6 +3,10 @@ FROM alpine:latest
 # Install Postfix, OpenDKIM, and their dependencies, and Dovecot for SASL
 RUN apk add --no-cache postfix opendkim opendkim-utils dovecot curl rspamd
 
+# Create a non-root user for RSPAMD
+RUN adduser -D -H -s /sbin/nologin rspamd && \
+    addgroup rspamd rspamd
+
 # Configure Postfix for send-only, integrate with RSPAMD, enable SASL, and enable STARTTLS
 RUN postconf -e 'inet_interfaces = all' && \
     postconf -e 'mydestination = localhost.localdomain, localhost' && \
@@ -18,10 +22,7 @@ RUN postconf -e 'inet_interfaces = all' && \
     postconf -e 'smtpd_sasl_security_options = noanonymous' && \
     postconf -e 'broken_sasl_auth_clients = yes' && \
     postconf -e 'smtpd_recipient_restrictions = permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination' && \
-    postconf -e 'smtpd_tls_security_level = may' && \
     postconf -e 'smtp_tls_security_level = may' && \
-    postconf -e 'smtpd_tls_auth_only = no' && \
-    postconf -e 'smtpd_tls_loglevel = 1' && \
     postconf -e 'smtp_tls_loglevel = 1'
 
 # Configure RSPAMD
@@ -36,12 +37,19 @@ RUN chown root:root /etc/dovecot/dovecot.conf && \
 
 # Create a startup script
 RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'rspamd' >> /start.sh && \
+    echo 'rspamd -u rspamd -g rspamd' >> /start.sh && \
     echo 'dovecot' >> /start.sh && \
     echo 'postconf -e "myhostname = $MAIL_HOST"' >> /start.sh && \
     echo 'postconf -e "myorigin = $DOMAIN"' >> /start.sh && \
     echo 'postconf -e "masquerade_domains = $DOMAIN"' >> /start.sh && \
     echo 'postconf -e "inet_interfaces = all"' >> /start.sh && \
+    echo 'if [ "$ENABLE_SMTPD_TLS" = "true" ]; then' >> /start.sh && \
+    echo '    postconf -e "smtpd_tls_security_level = may"' >> /start.sh && \
+    echo '    postconf -e "smtpd_tls_auth_only = no"' >> /start.sh && \
+    echo '    postconf -e "smtpd_tls_loglevel = 1"' >> /start.sh && \
+    echo 'else' >> /start.sh && \
+    echo '    postconf -e "smtpd_tls_security_level = none"' >> /start.sh && \
+    echo 'fi' >> /start.sh && \
     echo 'postfix start-fg' >> /start.sh && \
     chmod +x /start.sh
 
